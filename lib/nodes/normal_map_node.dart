@@ -16,7 +16,7 @@ class NormalMapNode extends Node {
   NormalMapNode({
     super.color = const Color(0xFF6E5A8F),
     super.label = 'Normal Map',
-    super.size = const Size(260, 360),
+    super.size = const Size(260, 400),
     super.inputs = const [Input(label: 'Height')],
     super.outputs = const [Output(label: 'Normal', color: Colors.amber)],
     super.offset,
@@ -24,6 +24,7 @@ class NormalMapNode extends Node {
     super.key,
     this.strength = 2.0,
     this.invertG = false,
+    this.blur = 1,
   });
 
   factory NormalMapNode.fromJson(Map<String, dynamic> json) {
@@ -33,11 +34,13 @@ class NormalMapNode extends Node {
       uuid: data.uuid,
       strength: (json['strength'] as num?)?.toDouble() ?? 2.0,
       invertG: json['invertG'] as bool? ?? false,
+      blur: (json['blur'] as num?)?.toInt() ?? 1,
     );
   }
 
   double strength;
   bool invertG;
+  int blur;
 
   Uint8List? _previewBytes;
 
@@ -49,7 +52,7 @@ class NormalMapNode extends Node {
     final res = await upstream.first.execute(context, cache);
     if (res is! ImagePayload) throw Exception('Height input did not produce an image');
 
-    final out = sobelNormal(res.image, strength: strength, invertG: invertG);
+    final out = sobelNormal(res.image, strength: strength, invertG: invertG, blurRadius: blur);
     final payload = ImagePayload(out);
     _previewBytes = payload.png;
     controller?.requestUpdate();
@@ -67,18 +70,37 @@ class NormalMapNode extends Node {
             const Text('Strength'),
             Expanded(
               child: Slider(
-                min: 0.1,
-                max: 5.0,
-                value: strength.clamp(0.1, 5.0),
+                min: 1.0,
+                max: 10.0,
+                value: strength.clamp(1.0, 10.0),
                 label: strength.toStringAsFixed(1),
-                divisions: 49,
+                divisions: 90,
                 onChanged: (v) {
                   strength = v;
                   controller?.requestUpdate();
                 },
               ),
             ),
-            SizedBox(width: 28, child: Text(strength.toStringAsFixed(1))),
+            SizedBox(width: 34, child: Text(strength.toStringAsFixed(1))),
+          ],
+        ),
+        Row(
+          children: [
+            const Text('Blur'),
+            Expanded(
+              child: Slider(
+                min: 0,
+                max: 8,
+                value: blur.clamp(0, 8).toDouble(),
+                label: '$blur',
+                divisions: 8,
+                onChanged: (v) {
+                  blur = v.round();
+                  controller?.requestUpdate();
+                },
+              ),
+            ),
+            SizedBox(width: 34, child: Text('$blur px')),
           ],
         ),
         Row(
@@ -104,6 +126,7 @@ class NormalMapNode extends Node {
     final json = super.toJson();
     json['strength'] = strength;
     json['invertG'] = invertG;
+    json['blur'] = blur;
     return json;
   }
 }

@@ -72,7 +72,20 @@ img.Image packRGBA({
 ///
 /// [strength] scales the gradient before normalization; [invertG] flips the
 /// green channel for DirectX-style normal maps (default is OpenGL).
-img.Image sobelNormal(img.Image height, {double strength = 2.0, bool invertG = false}) {
+/// [blurRadius] applies a Gaussian pre-blur to the height map before computing
+/// gradients — this smooths out per-pixel noise so the normals describe the real
+/// surface shape instead of grain (0 = no blur).
+img.Image sobelNormal(
+  img.Image height, {
+  double strength = 2.0,
+  bool invertG = false,
+  int blurRadius = 0,
+}) {
+  // Pre-blur the height map to remove high-frequency noise. gaussianBlur is a
+  // no-op at radius 0, so this is safe to always call.
+  if (blurRadius > 0) {
+    height = img.gaussianBlur(height, radius: blurRadius);
+  }
   final w = height.width;
   final h = height.height;
   final out = img.Image(width: w, height: h, numChannels: 4);
