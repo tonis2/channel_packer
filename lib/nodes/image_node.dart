@@ -6,11 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
 import '../core/image_payload.dart';
+import '../core/settings.dart';
 
 /// Source node: load an image file, preview it, and output the decoded image.
 ///
-/// The picked image is re-encoded to PNG so it can be both previewed and
-/// embedded (base64) in the saved graph for full round-trip restore.
+/// Performance note: we keep the *original* file bytes (PNG/JPG/etc.) for both
+/// the preview and serialization. The browser can render those bytes directly
+/// via [Image.memory] with no decode, and we only decode to pixels lazily — the
+/// first time a downstream node actually pulls the image during a Run. This
+/// keeps picking instant; decoding/encoding the full-res image on the main
+/// isolate is expensive (zlib deflate in pure Dart) and was the source of the
+/// multi-second, CPU-heavy stall on pick.
 // ignore: must_be_immutable
 class ImageNode extends Node {
   @override
@@ -25,10 +31,8 @@ class ImageNode extends Node {
     super.offset,
     super.uuid,
     super.key,
-    this.pngBytes,
-  }) {
-    if (pngBytes != null) image = img.decodePng(pngBytes!);
-  }
+    this.bytes,
+  });
 
   factory ImageNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
@@ -36,36 +40,39 @@ class ImageNode extends Node {
     return ImageNode(
       offset: data.offset,
       uuid: data.uuid,
-      pngBytes: b64 != null ? base64Decode(b64) : null,
+      bytes: b64 != null ? base64Decode(b64) : null,
     );
   }
 
-  /// PNG-encoded bytes (for preview + serialization).
-  Uint8List? pngBytes;
+  /// Original picked file bytes (for preview + serialization).
+  Uint8List? bytes;
 
-  /// Decoded image (for downstream processing).
-  img.Image? image;
+  /// Lazily-decoded pixels, computed on first downstream pull.
+  img.Image? _decoded;
+
+  /// Decode on demand (and cache). Returns null if no image / undecodable.
+  img.Image? get image => _decoded ??= (bytes == null ? null : img.decodeImage(bytes!));
 
   Future<void> pickImage(BuildContext context) async {
     // Capture the controller before awaiting — context may be unsafe after.
     final controller = NodeControls.of(context);
     final result = await FilePicker.pickFiles(type: FileType.image, withData: true);
     if (result == null) return;
-    final bytes = result.files.first.bytes;
-    if (bytes == null) return;
+    final picked = result.files.first.bytes;
+    if (picked == null) return;
 
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return;
-    image = decoded;
-    // Normalize to PNG for preview + serialization regardless of source format.
-    pngBytes = Uint8List.fromList(img.encodePng(decoded));
+    // Store the raw bytes only — no decode, no re-encode. Decoding happens
+    // lazily in `image` when the graph runs.
+    bytes = picked;
+    _decoded = null;
     controller?.requestUpdate();
   }
 
   @override
   Future<dynamic> run(BuildContext context, ExecutionContext cache) async {
-    if (image == null) throw Exception('Image node has no image');
-    return ImagePayload(image!);
+    final decoded = image;
+    if (decoded == null) throw Exception('Image node has no image');
+    return ImagePayload(decoded);
   }
 
   @override
@@ -80,19 +87,19 @@ class ImageNode extends Node {
         color: Colors.black26,
         child: Stack(
           children: [
-            if (pngBytes == null)
+            if (bytes == null)
               Center(child: Text('Click to pick image', style: theme.textTheme.bodySmall))
             else ...[
               Positioned.fill(
-                child: Image.memory(pngBytes!, fit: BoxFit.contain, gaplessPlayback: true),
+                child: Image.memory(bytes!, fit: BoxFit.contain, gaplessPlayback: true),
               ),
               Positioned(
                 right: 4,
                 top: 4,
                 child: InkWell(
                   onTap: () {
-                    image = null;
-                    pngBytes = null;
+                    bytes = null;
+                    _decoded = null;
                     controller?.requestUpdate();
                   },
                   child: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
@@ -108,7 +115,12 @@ class ImageNode extends Node {
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
-    if (pngBytes != null) json['bytes'] = base64Encode(pngBytes!);
+    // Only embed the raw image bytes when the user has opted in (Settings →
+    // "Embed images in saved config"). Off by default to keep graphs small and
+    // within the localStorage quota.
+    if (bytes != null && PackerSettings.embedImages) {
+      json['bytes'] = base64Encode(bytes!);
+    }
     return json;
   }
 }

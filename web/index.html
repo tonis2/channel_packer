@@ -40,6 +40,15 @@
     window.addEventListener('contextmenu', function (e) {
       e.preventDefault();
     }, false);
+
+    // Suppress the browser's native "Save page" dialog on Ctrl/Cmd+S so the app
+    // can use that combo to save the node setup to localStorage. Flutter still
+    // receives the keydown and handles the actual save.
+    window.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+      }
+    }, false);
   </script>
 </head>
 <body>
