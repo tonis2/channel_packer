@@ -29,4 +29,20 @@ void main() {
     expect(p.g.round(), 128); // y ~ 0.5
     expect(p.b.round(), 255); // z ~ 1.0
   });
+
+  test('all normal methods map a flat height to the flat normal (0,0,1)', () {
+    final flat = img.Image(width: 8, height: 8, numChannels: 1);
+    for (var y = 0; y < 8; y++) {
+      for (var x = 0; x < 8; x++) {
+        flat.setPixelRgb(x, y, 128, 128, 128);
+      }
+    }
+    for (final method in NormalMethod.values) {
+      final n = generateNormal(flat, method: method, blurRadius: 0);
+      final p = n.getPixel(4, 4);
+      expect(p.r.round(), 128, reason: '$method x');
+      expect(p.g.round(), 128, reason: '$method y');
+      expect(p.b.round(), 255, reason: '$method z');
+    }
+  });
 }

@@ -6,8 +6,10 @@ import '../core/image_ops.dart';
 import '../core/image_payload.dart';
 import '../widgets/node_preview.dart';
 
-/// Convert a height/depth input into a normal map (Sobel), with a strength
-/// slider and an invert-G toggle for DirectX vs OpenGL conventions.
+/// Convert a height/depth input into a normal map. The gradient method is
+/// selectable (Sobel / Scharr / Multi-scale); plus strength, a noise pre-blur,
+/// an invert-G toggle (DirectX vs OpenGL), and — in multi-scale — Detail/Large
+/// weighting of the fine and coarse passes.
 // ignore: must_be_immutable
 class NormalMapNode extends Node {
   @override
@@ -16,15 +18,18 @@ class NormalMapNode extends Node {
   NormalMapNode({
     super.color = const Color(0xFF6E5A8F),
     super.label = 'Normal Map',
-    super.size = const Size(260, 400),
+    super.size = const Size(260, 520),
     super.inputs = const [Input(label: 'Height')],
     super.outputs = const [Output(label: 'Normal', color: Colors.amber)],
     super.offset,
     super.uuid,
     super.key,
+    this.method = NormalMethod.scharr,
     this.strength = 2.0,
     this.invertG = false,
     this.blur = 1,
+    this.detail = 1.0,
+    this.large = 1.0,
   });
 
   factory NormalMapNode.fromJson(Map<String, dynamic> json) {
@@ -32,15 +37,26 @@ class NormalMapNode extends Node {
     return NormalMapNode(
       offset: data.offset,
       uuid: data.uuid,
+      method: _methodFromName(json['method'] as String?),
       strength: (json['strength'] as num?)?.toDouble() ?? 2.0,
       invertG: json['invertG'] as bool? ?? false,
       blur: (json['blur'] as num?)?.toInt() ?? 1,
+      detail: (json['detail'] as num?)?.toDouble() ?? 1.0,
+      large: (json['large'] as num?)?.toDouble() ?? 1.0,
     );
   }
 
+  static NormalMethod _methodFromName(String? name) => NormalMethod.values.firstWhere(
+        (m) => m.name == name,
+        orElse: () => NormalMethod.scharr,
+      );
+
+  NormalMethod method;
   double strength;
   bool invertG;
   int blur;
+  double detail;
+  double large;
 
   Uint8List? _previewBytes;
 
@@ -52,7 +68,15 @@ class NormalMapNode extends Node {
     final res = await upstream.first.execute(context, cache);
     if (res is! ImagePayload) throw Exception('Height input did not produce an image');
 
-    final out = sobelNormal(res.image, strength: strength, invertG: invertG, blurRadius: blur);
+    final out = generateNormal(
+      res.image,
+      method: method,
+      strength: strength,
+      invertG: invertG,
+      blurRadius: blur,
+      detail: detail,
+      large: large,
+    );
     final payload = ImagePayload(out);
     _previewBytes = payload.png;
     controller?.requestUpdate();
@@ -64,45 +88,41 @@ class NormalMapNode extends Node {
     final controller = NodeControls.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Text('Strength'),
+            const Text('Method'),
+            const SizedBox(width: 8),
             Expanded(
-              child: Slider(
-                min: 1.0,
-                max: 10.0,
-                value: strength.clamp(1.0, 10.0),
-                label: strength.toStringAsFixed(1),
-                divisions: 90,
+              child: DropdownButton<NormalMethod>(
+                isExpanded: true,
+                isDense: true,
+                value: method,
                 onChanged: (v) {
-                  strength = v;
+                  if (v == null) return;
+                  method = v;
                   controller?.requestUpdate();
                 },
+                items: const [
+                  DropdownMenuItem(value: NormalMethod.sobel, child: Text('Sobel')),
+                  DropdownMenuItem(value: NormalMethod.scharr, child: Text('Scharr')),
+                  DropdownMenuItem(value: NormalMethod.multiScale, child: Text('Multi-scale')),
+                ],
               ),
             ),
-            SizedBox(width: 34, child: Text(strength.toStringAsFixed(1))),
           ],
         ),
-        Row(
-          children: [
-            const Text('Blur'),
-            Expanded(
-              child: Slider(
-                min: 0,
-                max: 8,
-                value: blur.clamp(0, 8).toDouble(),
-                label: '$blur',
-                divisions: 8,
-                onChanged: (v) {
-                  blur = v.round();
-                  controller?.requestUpdate();
-                },
-              ),
-            ),
-            SizedBox(width: 34, child: Text('$blur px')),
-          ],
-        ),
+        _slider('Strength', strength, 1.0, 10.0, 90, strength.toStringAsFixed(1),
+            (v) => strength = v, controller),
+        _slider('Blur', blur.toDouble(), 0, 8, 8, '$blur px',
+            (v) => blur = v.round(), controller),
+        if (method == NormalMethod.multiScale) ...[
+          _slider('Detail', detail, 0.0, 2.0, 40, detail.toStringAsFixed(2),
+              (v) => detail = v, controller),
+          _slider('Large', large, 0.0, 2.0, 40, large.toStringAsFixed(2),
+              (v) => large = v, controller),
+        ],
         Row(
           children: [
             Checkbox(
@@ -121,12 +141,39 @@ class NormalMapNode extends Node {
     );
   }
 
+  /// A labeled slider row with a trailing value readout.
+  Widget _slider(String label, double value, double min, double max, int divisions,
+      String readout, ValueChanged<double> onChanged, NodeEditorController? controller) {
+    return Row(
+      children: [
+        SizedBox(width: 56, child: Text(label)),
+        Expanded(
+          child: Slider(
+            min: min,
+            max: max,
+            value: value.clamp(min, max),
+            label: readout,
+            divisions: divisions,
+            onChanged: (v) {
+              onChanged(v);
+              controller?.requestUpdate();
+            },
+          ),
+        ),
+        SizedBox(width: 40, child: Text(readout)),
+      ],
+    );
+  }
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
+    json['method'] = method.name;
     json['strength'] = strength;
     json['invertG'] = invertG;
     json['blur'] = blur;
+    json['detail'] = detail;
+    json['large'] = large;
     return json;
   }
 }

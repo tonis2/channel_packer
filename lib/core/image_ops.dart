@@ -67,61 +67,145 @@ img.Image packRGBA({
   return out;
 }
 
-/// Convert a height/depth image into a tangent-space normal map using a Sobel
-/// operator, matching the reference channel-packer site.
+/// Gradient operator used to turn a height map into a normal map.
 ///
+/// - [sobel]: classic 3×3 `[1,2,1]` kernel. Cheap but has a slight diagonal bias.
+/// - [scharr]: 3×3 `[3,10,3]` kernel, optimized for rotational symmetry, so the
+///   gradient *direction* is more accurate than Sobel — a strictly better swap.
+/// - [multiScale]: runs Scharr at two scales (a fine pass + a heavily-blurred
+///   large pass) and blends them, capturing crisp detail and broad surface form
+///   without the grain a single pass produces.
+enum NormalMethod { sobel, scharr, multiScale }
+
+/// One side's kernel weights (outer, center) for each operator. Scharr weights
+/// also drive the multi-scale passes.
+({double outer, double center}) _kernelWeights(NormalMethod method) =>
+    method == NormalMethod.sobel ? (outer: 1, center: 2) : (outer: 3, center: 10);
+
+/// Sobel/Scharr-shaped gradient at (x, y), normalized so every operator lands on
+/// the same magnitude scale as the classic Sobel (so `strength` means the same
+/// thing regardless of method). Returns slopes in roughly [-255, 255].
+({double dx, double dy}) _slopeAt(
+  double Function(int, int) g,
+  int x,
+  int y,
+  double outer,
+  double center,
+) {
+  final tl = g(x - 1, y - 1), t = g(x, y - 1), tr = g(x + 1, y - 1);
+  final l = g(x - 1, y), r = g(x + 1, y);
+  final bl = g(x - 1, y + 1), b = g(x, y + 1), br = g(x + 1, y + 1);
+
+  // Rescale to Sobel's magnitude: Sobel's one-side weight sum is 4, so dividing
+  // by this operator's sum and multiplying by 4 keeps `strength` comparable.
+  final scale = 4.0 / (2 * outer + center);
+  final dx = ((outer * tr + center * r + outer * br) -
+          (outer * tl + center * l + outer * bl)) *
+      scale;
+  final dy = ((outer * bl + center * b + outer * br) -
+          (outer * tl + center * t + outer * tr)) *
+      scale;
+  return (dx: dx, dy: dy);
+}
+
+/// Encode tangent-space slopes into a normal-map RGBA pixel.
+void _encodeNormal(
+  img.Image out,
+  int x,
+  int y,
+  double dX,
+  double dY,
+  double strength,
+  bool invertG,
+) {
+  var nx = -dX * strength / 255.0;
+  var ny = -dY * strength / 255.0;
+  const nz = 1.0;
+  final len = math.sqrt(nx * nx + ny * ny + nz * nz);
+  nx /= len;
+  ny /= len;
+  final nzn = nz / len;
+
+  var gEnc = ny * 0.5 + 0.5;
+  if (invertG) gEnc = 1.0 - gEnc;
+
+  out.setPixelRgba(
+    x,
+    y,
+    ((nx * 0.5 + 0.5) * 255.0).round().clamp(0, 255),
+    (gEnc * 255.0).round().clamp(0, 255),
+    ((nzn * 0.5 + 0.5) * 255.0).round().clamp(0, 255),
+    255,
+  );
+}
+
+/// Convert a height/depth image into a tangent-space normal map.
+///
+/// [method] picks the gradient operator (see [NormalMethod]).
 /// [strength] scales the gradient before normalization; [invertG] flips the
 /// green channel for DirectX-style normal maps (default is OpenGL).
-/// [blurRadius] applies a Gaussian pre-blur to the height map before computing
-/// gradients — this smooths out per-pixel noise so the normals describe the real
-/// surface shape instead of grain (0 = no blur).
-img.Image sobelNormal(
+/// [blurRadius] applies a Gaussian pre-blur to remove per-pixel noise (0 = off).
+/// [detail]/[large] only apply to [NormalMethod.multiScale]: they weight the
+/// fine and coarse passes; [largeScale] is the coarse pass's extra blur radius.
+img.Image generateNormal(
   img.Image height, {
+  NormalMethod method = NormalMethod.scharr,
   double strength = 2.0,
   bool invertG = false,
   int blurRadius = 0,
+  double detail = 1.0,
+  double large = 1.0,
+  int largeScale = 6,
 }) {
-  // Pre-blur the height map to remove high-frequency noise. gaussianBlur is a
-  // no-op at radius 0, so this is safe to always call.
+  // Pre-blur to remove high-frequency noise. gaussianBlur is a no-op at 0.
   if (blurRadius > 0) {
     height = img.gaussianBlur(height, radius: blurRadius);
   }
   final w = height.width;
   final h = height.height;
   final out = img.Image(width: w, height: h, numChannels: 4);
+  final k = _kernelWeights(method);
 
-  // Grayscale lookup with clamped edges.
   double gray(int x, int y) => readGray(height.getPixelClamped(x, y)).toDouble();
+
+  if (method == NormalMethod.multiScale) {
+    // Fine pass = the (already noise-blurred) source; large pass = a heavily
+    // blurred copy that captures broad form. Blend the slopes (partial-derivative
+    // blending), which is the correct way to combine normals.
+    final coarse = img.gaussianBlur(height, radius: largeScale);
+    double grayCoarse(int x, int y) =>
+        readGray(coarse.getPixelClamped(x, y)).toDouble();
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        final f = _slopeAt(gray, x, y, k.outer, k.center);
+        final c = _slopeAt(grayCoarse, x, y, k.outer, k.center);
+        _encodeNormal(
+          out, x, y, detail * f.dx + large * c.dx, detail * f.dy + large * c.dy, strength, invertG);
+      }
+    }
+    return out;
+  }
 
   for (var y = 0; y < h; y++) {
     for (var x = 0; x < w; x++) {
-      final tl = gray(x - 1, y - 1), t = gray(x, y - 1), tr = gray(x + 1, y - 1);
-      final l = gray(x - 1, y), r = gray(x + 1, y);
-      final bl = gray(x - 1, y + 1), b = gray(x, y + 1), br = gray(x + 1, y + 1);
-
-      final dX = (tr + 2 * r + br) - (tl + 2 * l + bl);
-      final dY = (bl + 2 * b + br) - (tl + 2 * t + tr);
-
-      var nx = -dX * strength / 255.0;
-      var ny = -dY * strength / 255.0;
-      const nz = 1.0;
-      final len = math.sqrt(nx * nx + ny * ny + nz * nz);
-      nx /= len;
-      ny /= len;
-      final nzn = nz / len;
-
-      var gEnc = ny * 0.5 + 0.5;
-      if (invertG) gEnc = 1.0 - gEnc;
-
-      out.setPixelRgba(
-        x,
-        y,
-        ((nx * 0.5 + 0.5) * 255.0).round().clamp(0, 255),
-        (gEnc * 255.0).round().clamp(0, 255),
-        ((nzn * 0.5 + 0.5) * 255.0).round().clamp(0, 255),
-        255,
-      );
+      final s = _slopeAt(gray, x, y, k.outer, k.center);
+      _encodeNormal(out, x, y, s.dx, s.dy, strength, invertG);
     }
   }
   return out;
 }
+
+/// Backwards-compatible Sobel wrapper (kept for existing callers/tests).
+img.Image sobelNormal(
+  img.Image height, {
+  double strength = 2.0,
+  bool invertG = false,
+  int blurRadius = 0,
+}) =>
+    generateNormal(
+      height,
+      method: NormalMethod.sobel,
+      strength: strength,
+      invertG: invertG,
+      blurRadius: blurRadius,
+    );
