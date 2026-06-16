@@ -17,6 +17,7 @@ class NormalMapNode extends Node {
 
   NormalMapNode({
     super.color = const Color(0xFF6E5A8F),
+    super.backgroundColor = const Color(0xFF2C2C31),
     super.label = 'Normal Map',
     super.size = const Size(260, 520),
     super.inputs = const [Input(label: 'Height')],
@@ -62,11 +63,13 @@ class NormalMapNode extends Node {
   Future<dynamic> run(BuildContext context, ExecutionContext cache) async {
     final controller = NodeControls.of(context);
     final upstream = controller?.incomingNodes(this, 0) ?? const [];
-    if (upstream.isEmpty)
+    if (upstream.isEmpty) {
       throw Exception('Normal Map node has no Height input');
+    }
     final res = await upstream.first.execute(context, cache);
-    if (res is! ImagePayload)
+    if (res is! ImagePayload) {
       throw Exception('Height input did not produce an image');
+    }
 
     final out = generateNormal(
       res.image,

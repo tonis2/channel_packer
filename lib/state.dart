@@ -1,9 +1,11 @@
 import 'package:easy_nodes/index.dart';
 import 'package:flutter/material.dart';
 
+import 'nodes/ao_node.dart';
 import 'nodes/image_node.dart';
 import 'nodes/normal_map_node.dart';
 import 'nodes/packer_node.dart';
+import 'nodes/roughness_node.dart';
 
 /// App-wide state: owns the [NodeEditorController] and registers the node types
 /// so they appear in the canvas right-click menu and the toolbar add menu.
@@ -40,6 +42,24 @@ class AppState extends ChangeNotifier {
         description: 'Height -> normal map (Sobel)',
         icon: Icons.terrain,
         factory: (json) => NormalMapNode.fromJson(json),
+      ),
+    );
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'AONode',
+        displayName: 'Ambient Occlusion',
+        description: 'Height -> ambient occlusion (ORM red)',
+        icon: Icons.blur_on,
+        factory: (json) => AONode.fromJson(json),
+      ),
+    );
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'RoughnessNode',
+        displayName: 'Roughness',
+        description: 'Color/height -> roughness estimate (ORM green)',
+        icon: Icons.grain,
+        factory: (json) => RoughnessNode.fromJson(json),
       ),
     );
   }

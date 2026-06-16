@@ -33,11 +33,19 @@ class NodePreview extends StatelessWidget {
           alignment: Alignment.center,
           child: bytes == null
               ? Text(placeholder, style: theme.textTheme.bodySmall)
-              : Image.memory(bytes!, width: size, height: size, fit: BoxFit.contain, gaplessPlayback: true),
+              : Image.memory(
+                  bytes!,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                ),
         ),
         const SizedBox(height: 6),
         FilledButton.icon(
-          onPressed: bytes == null ? null : () => downloadBytes(bytes!, filename, mime: 'image/png'),
+          onPressed: bytes == null
+              ? null
+              : () => downloadBytes(bytes!, filename, mime: 'image/png'),
           icon: const Icon(Icons.download, size: 18),
           label: const Text('Download PNG'),
         ),

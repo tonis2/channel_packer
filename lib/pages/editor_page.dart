@@ -121,8 +121,8 @@ class _EditorPageState extends State<EditorPage> {
                 body: NodeCanvas(
                   controller: controller,
                   zoom: 0.8,
-                  backgroundColor: const Color(0xFF1E1E1E),
-                  lineColor: const Color(0x22FFFFFF),
+                  backgroundColor: const Color.fromARGB(255, 100, 102, 108),
+                  lineColor: const Color.fromARGB(33, 210, 207, 207),
                   connectionColor: const Color(0xFFA6A4A4),
                 ),
               ),

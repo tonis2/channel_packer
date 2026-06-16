@@ -1,22 +1,7 @@
-import 'package:web/web.dart' as web;
-
-/// Browser `localStorage` persistence (WASM-safe via `package:web`).
-///
-/// Holds the user's last-saved node graph and their settings so the page
-/// restores their setup on reload.
-
-const _graphKey = 'channel_packer.graph';
-const _embedKey = 'channel_packer.embedImages';
-
-/// The user's last-saved graph JSON, or null if they have none yet.
-String? loadStoredGraph() => web.window.localStorage.getItem(_graphKey);
-
-void storeGraphString(String json) => web.window.localStorage.setItem(_graphKey, json);
-
-void clearStoredGraph() => web.window.localStorage.removeItem(_graphKey);
-
-/// The persisted "embed images in saved config" toggle (default false).
-bool loadEmbedImages() => web.window.localStorage.getItem(_embedKey) == 'true';
-
-void storeEmbedImages(bool value) =>
-    web.window.localStorage.setItem(_embedKey, value ? 'true' : 'false');
+// Persistence for the saved graph + settings.
+//
+// Platform-dispatched: web uses browser `localStorage` (`storage_web.dart`);
+// native desktop/mobile uses a JSON file in the user's config dir
+// (`storage_io.dart`). Both expose the same synchronous API, so callers don't
+// branch on platform.
+export 'storage_io.dart' if (dart.library.js_interop) 'storage_web.dart';

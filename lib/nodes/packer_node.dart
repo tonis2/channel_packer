@@ -23,6 +23,7 @@ class PackerNode extends Node {
 
   PackerNode({
     super.color = const Color(0xFF3C6E8F),
+    super.backgroundColor = const Color(0xFF2C2C31),
     super.label = 'Packer',
     super.size = const Size(260, 430),
     super.inputs = const [

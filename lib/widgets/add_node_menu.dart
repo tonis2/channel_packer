@@ -16,7 +16,10 @@ class AddNodeMenu extends StatelessWidget {
       onSelected: (meta) {
         final node = meta.factory({'label': meta.displayName});
         // Drop new nodes into a roughly central, slightly staggered spot.
-        final offset = Offset(400.0 + controller.nodes.length * 30, 200.0 + controller.nodes.length * 20);
+        final offset = Offset(
+          400.0 + controller.nodes.length * 30,
+          200.0 + controller.nodes.length * 20,
+        );
         node.init(context).then((_) => controller.addNode(node, offset));
       },
       itemBuilder: (context) => [

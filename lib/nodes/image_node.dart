@@ -24,6 +24,7 @@ class ImageNode extends Node {
 
   ImageNode({
     super.color = const Color(0xFF4E7D4E),
+    super.backgroundColor = const Color(0xFF2C2C31),
     super.label = 'Image',
     super.size = const Size(240, 280),
     super.inputs = const [],

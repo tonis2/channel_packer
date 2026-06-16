@@ -31,6 +31,27 @@ class ChannelPackerApp extends StatelessWidget {
           backgroundColor: panel,
           foregroundColor: Colors.white,
         ),
+        // The M3 dark default accent is a pink/mauve, which the node sliders and
+        // checkboxes pick up and which clashes with the dark nodes. Retheme them
+        // onto amber — the same accent the output ports already use.
+        sliderTheme: SliderThemeData(
+          activeTrackColor: Colors.amber,
+          inactiveTrackColor: Colors.white24,
+          thumbColor: Colors.amber,
+          overlayColor: Colors.amber.withValues(alpha: 0.15),
+          valueIndicatorColor: panel,
+          valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+          // Hide the per-division tick marks; with 80–100 divisions they clutter.
+          activeTickMarkColor: Colors.transparent,
+          inactiveTickMarkColor: Colors.transparent,
+        ),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected) ? Colors.amber : null,
+          ),
+          checkColor: WidgetStateProperty.all(Colors.black),
+        ),
       ),
       home: const EditorPage(),
     );
