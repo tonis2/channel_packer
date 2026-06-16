@@ -119,7 +119,9 @@ void _encodeNormal(
   bool invertG,
 ) {
   var nx = -dX * strength / 255.0;
-  var ny = -dY * strength / 255.0;
+  // OpenGL convention (Blender/glTF): +Y green points up the image, so green is
+  // proportional to +dY (dY = bottom - top). invertG flips this to DirectX.
+  var ny = dY * strength / 255.0;
   const nz = 1.0;
   final len = math.sqrt(nx * nx + ny * ny + nz * nz);
   nx /= len;
