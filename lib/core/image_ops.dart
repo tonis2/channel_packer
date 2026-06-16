@@ -27,7 +27,9 @@ int readGray(img.Pixel p) =>
 }
 
 img.Image _resizeTo(img.Image src, int w, int h) =>
-    (src.width == w && src.height == h) ? src : img.copyResize(src, width: w, height: h);
+    (src.width == w && src.height == h)
+    ? src
+    : img.copyResize(src, width: w, height: h);
 
 /// Pack up to four grayscale sources into a single RGBA image.
 ///
@@ -80,7 +82,9 @@ enum NormalMethod { sobel, scharr, multiScale }
 /// One side's kernel weights (outer, center) for each operator. Scharr weights
 /// also drive the multi-scale passes.
 ({double outer, double center}) _kernelWeights(NormalMethod method) =>
-    method == NormalMethod.sobel ? (outer: 1, center: 2) : (outer: 3, center: 10);
+    method == NormalMethod.sobel
+    ? (outer: 1, center: 2)
+    : (outer: 3, center: 10);
 
 /// Sobel/Scharr-shaped gradient at (x, y), normalized so every operator lands on
 /// the same magnitude scale as the classic Sobel (so `strength` means the same
@@ -99,10 +103,12 @@ enum NormalMethod { sobel, scharr, multiScale }
   // Rescale to Sobel's magnitude: Sobel's one-side weight sum is 4, so dividing
   // by this operator's sum and multiplying by 4 keeps `strength` comparable.
   final scale = 4.0 / (2 * outer + center);
-  final dx = ((outer * tr + center * r + outer * br) -
+  final dx =
+      ((outer * tr + center * r + outer * br) -
           (outer * tl + center * l + outer * bl)) *
       scale;
-  final dy = ((outer * bl + center * b + outer * br) -
+  final dy =
+      ((outer * bl + center * b + outer * br) -
           (outer * tl + center * t + outer * tr)) *
       scale;
   return (dx: dx, dy: dy);
@@ -168,7 +174,8 @@ img.Image generateNormal(
   final out = img.Image(width: w, height: h, numChannels: 4);
   final k = _kernelWeights(method);
 
-  double gray(int x, int y) => readGray(height.getPixelClamped(x, y)).toDouble();
+  double gray(int x, int y) =>
+      readGray(height.getPixelClamped(x, y)).toDouble();
 
   if (method == NormalMethod.multiScale) {
     // Fine pass = the (already noise-blurred) source; large pass = a heavily
@@ -182,7 +189,14 @@ img.Image generateNormal(
         final f = _slopeAt(gray, x, y, k.outer, k.center);
         final c = _slopeAt(grayCoarse, x, y, k.outer, k.center);
         _encodeNormal(
-          out, x, y, detail * f.dx + large * c.dx, detail * f.dy + large * c.dy, strength, invertG);
+          out,
+          x,
+          y,
+          detail * f.dx + large * c.dx,
+          detail * f.dy + large * c.dy,
+          strength,
+          invertG,
+        );
       }
     }
     return out;
@@ -203,11 +217,10 @@ img.Image sobelNormal(
   double strength = 2.0,
   bool invertG = false,
   int blurRadius = 0,
-}) =>
-    generateNormal(
-      height,
-      method: NormalMethod.sobel,
-      strength: strength,
-      invertG: invertG,
-      blurRadius: blurRadius,
-    );
+}) => generateNormal(
+  height,
+  method: NormalMethod.sobel,
+  strength: strength,
+  invertG: invertG,
+  blurRadius: blurRadius,
+);

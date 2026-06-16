@@ -13,7 +13,8 @@ import 'storage.dart';
 const _defaultGraphAsset = 'assets/default_graph.json';
 
 /// Serialize the whole node graph to a JSON string.
-String serializeGraph(NodeEditorController controller) => jsonEncode(controller.toJson());
+String serializeGraph(NodeEditorController controller) =>
+    jsonEncode(controller.toJson());
 
 /// Persist the current graph to localStorage (used by Ctrl+S and Save).
 void saveGraphToStorage(NodeEditorController controller) {
@@ -49,7 +50,10 @@ Future<void> _applyGraph(
 ///
 /// WASM-safe: reads `result.files.first.bytes` (never `.path`, which is null on
 /// web). Returns true if a graph was loaded.
-Future<bool> loadGraph(NodeEditorController controller, BuildContext context) async {
+Future<bool> loadGraph(
+  NodeEditorController controller,
+  BuildContext context,
+) async {
   final result = await FilePicker.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['json'],
@@ -66,7 +70,10 @@ Future<bool> loadGraph(NodeEditorController controller, BuildContext context) as
 
 /// Initial graph on page load: the user's saved config from localStorage if it
 /// exists, otherwise the bundled default starter graph.
-Future<void> loadInitialGraph(NodeEditorController controller, BuildContext context) async {
+Future<void> loadInitialGraph(
+  NodeEditorController controller,
+  BuildContext context,
+) async {
   final stored = loadStoredGraph();
   final jsonStr = stored ?? await rootBundle.loadString(_defaultGraphAsset);
   if (!context.mounted) return;

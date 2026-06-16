@@ -43,7 +43,9 @@ class PackerNode extends Node {
     Map<String, int?>? sel;
     final s = json['sel'] as Map<String, dynamic>?;
     if (s != null) {
-      sel = {for (final k in ['R', 'G', 'B', 'A']) k: s[k] as int?};
+      sel = {
+        for (final k in ['R', 'G', 'B', 'A']) k: s[k] as int?,
+      };
     }
     return PackerNode(offset: data.offset, uuid: data.uuid, sel: sel);
   }
@@ -116,7 +118,11 @@ class _ChannelRow extends StatelessWidget {
   final int? value;
   final ValueChanged<int?> onChanged;
 
-  const _ChannelRow({required this.channel, required this.value, required this.onChanged});
+  const _ChannelRow({
+    required this.channel,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +130,13 @@ class _ChannelRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          SizedBox(width: 18, child: Text(channel, style: const TextStyle(fontWeight: FontWeight.bold))),
+          SizedBox(
+            width: 18,
+            child: Text(
+              channel,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: DropdownButton<int?>(
@@ -135,7 +147,10 @@ class _ChannelRow extends StatelessWidget {
               items: [
                 const DropdownMenuItem<int?>(value: null, child: Text('None')),
                 for (var i = 0; i < _inputLabels.length; i++)
-                  DropdownMenuItem<int?>(value: i, child: Text(_inputLabels[i])),
+                  DropdownMenuItem<int?>(
+                    value: i,
+                    child: Text(_inputLabels[i]),
+                  ),
               ],
             ),
           ),

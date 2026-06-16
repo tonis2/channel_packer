@@ -21,7 +21,10 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   bool _restoredInitial = false;
 
-  Future<void> _run(BuildContext context, NodeEditorController controller) async {
+  Future<void> _run(
+    BuildContext context,
+    NodeEditorController controller,
+  ) async {
     try {
       await controller.executeAllEndpoints(context);
     } catch (e) {
@@ -29,7 +32,10 @@ class _EditorPageState extends State<EditorPage> {
     }
   }
 
-  Future<void> _load(BuildContext context, NodeEditorController controller) async {
+  Future<void> _load(
+    BuildContext context,
+    NodeEditorController controller,
+  ) async {
     try {
       await loadGraph(controller, context);
     } catch (e) {
@@ -46,12 +52,14 @@ class _EditorPageState extends State<EditorPage> {
   void _notify(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        width: 240,
-        duration: const Duration(seconds: 2),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          width: 240,
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   @override
@@ -73,10 +81,13 @@ class _EditorPageState extends State<EditorPage> {
           }
           return CallbackShortcuts(
             bindings: {
-              const SingleActivator(LogicalKeyboardKey.keyS, control: true):
-                  () => _quickSave(context, controller),
-              const SingleActivator(LogicalKeyboardKey.keyS, meta: true):
-                  () => _quickSave(context, controller),
+              const SingleActivator(
+                LogicalKeyboardKey.keyS,
+                control: true,
+              ): () =>
+                  _quickSave(context, controller),
+              const SingleActivator(LogicalKeyboardKey.keyS, meta: true): () =>
+                  _quickSave(context, controller),
             },
             child: Focus(
               autofocus: true,
@@ -147,7 +158,9 @@ class _SettingsMenuState extends State<_SettingsMenu> {
       ],
       onSelected: (value) {
         if (value == 'embed') {
-          setState(() => PackerSettings.embedImages = !PackerSettings.embedImages);
+          setState(
+            () => PackerSettings.embedImages = !PackerSettings.embedImages,
+          );
           storeEmbedImages(PackerSettings.embedImages);
         }
       },

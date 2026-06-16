@@ -8,10 +8,7 @@ import 'state.dart';
 void main() {
   // Restore the persisted "embed images" preference before any save can run.
   PackerSettings.embedImages = loadEmbedImages();
-  runApp(Inherited(
-    notifier: AppState(),
-    child: const ChannelPackerApp(),
-  ));
+  runApp(Inherited(notifier: AppState(), child: const ChannelPackerApp()));
 }
 
 class ChannelPackerApp extends StatelessWidget {

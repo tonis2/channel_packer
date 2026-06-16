@@ -46,10 +46,8 @@ class NormalMapNode extends Node {
     );
   }
 
-  static NormalMethod _methodFromName(String? name) => NormalMethod.values.firstWhere(
-        (m) => m.name == name,
-        orElse: () => NormalMethod.scharr,
-      );
+  static NormalMethod _methodFromName(String? name) => NormalMethod.values
+      .firstWhere((m) => m.name == name, orElse: () => NormalMethod.scharr);
 
   NormalMethod method;
   double strength;
@@ -64,9 +62,11 @@ class NormalMapNode extends Node {
   Future<dynamic> run(BuildContext context, ExecutionContext cache) async {
     final controller = NodeControls.of(context);
     final upstream = controller?.incomingNodes(this, 0) ?? const [];
-    if (upstream.isEmpty) throw Exception('Normal Map node has no Height input');
+    if (upstream.isEmpty)
+      throw Exception('Normal Map node has no Height input');
     final res = await upstream.first.execute(context, cache);
-    if (res is! ImagePayload) throw Exception('Height input did not produce an image');
+    if (res is! ImagePayload)
+      throw Exception('Height input did not produce an image');
 
     final out = generateNormal(
       res.image,
@@ -105,23 +105,64 @@ class NormalMapNode extends Node {
                   controller?.requestUpdate();
                 },
                 items: const [
-                  DropdownMenuItem(value: NormalMethod.sobel, child: Text('Sobel')),
-                  DropdownMenuItem(value: NormalMethod.scharr, child: Text('Scharr')),
-                  DropdownMenuItem(value: NormalMethod.multiScale, child: Text('Multi-scale')),
+                  DropdownMenuItem(
+                    value: NormalMethod.sobel,
+                    child: Text('Sobel'),
+                  ),
+                  DropdownMenuItem(
+                    value: NormalMethod.scharr,
+                    child: Text('Scharr'),
+                  ),
+                  DropdownMenuItem(
+                    value: NormalMethod.multiScale,
+                    child: Text('Multi-scale'),
+                  ),
                 ],
               ),
             ),
           ],
         ),
-        _slider('Strength', strength, 1.0, 10.0, 90, strength.toStringAsFixed(1),
-            (v) => strength = v, controller),
-        _slider('Blur', blur.toDouble(), 0, 8, 8, '$blur px',
-            (v) => blur = v.round(), controller),
+        _slider(
+          'Strength',
+          strength,
+          1.0,
+          10.0,
+          90,
+          strength.toStringAsFixed(1),
+          (v) => strength = v,
+          controller,
+        ),
+        _slider(
+          'Blur',
+          blur.toDouble(),
+          0,
+          8,
+          8,
+          '$blur px',
+          (v) => blur = v.round(),
+          controller,
+        ),
         if (method == NormalMethod.multiScale) ...[
-          _slider('Detail', detail, 0.0, 2.0, 40, detail.toStringAsFixed(2),
-              (v) => detail = v, controller),
-          _slider('Large', large, 0.0, 2.0, 40, large.toStringAsFixed(2),
-              (v) => large = v, controller),
+          _slider(
+            'Detail',
+            detail,
+            0.0,
+            2.0,
+            40,
+            detail.toStringAsFixed(2),
+            (v) => detail = v,
+            controller,
+          ),
+          _slider(
+            'Large',
+            large,
+            0.0,
+            2.0,
+            40,
+            large.toStringAsFixed(2),
+            (v) => large = v,
+            controller,
+          ),
         ],
         Row(
           children: [
@@ -142,8 +183,16 @@ class NormalMapNode extends Node {
   }
 
   /// A labeled slider row with a trailing value readout.
-  Widget _slider(String label, double value, double min, double max, int divisions,
-      String readout, ValueChanged<double> onChanged, NodeEditorController? controller) {
+  Widget _slider(
+    String label,
+    double value,
+    double min,
+    double max,
+    int divisions,
+    String readout,
+    ValueChanged<double> onChanged,
+    NodeEditorController? controller,
+  ) {
     return Row(
       children: [
         SizedBox(width: 56, child: Text(label)),

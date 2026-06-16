@@ -15,33 +15,43 @@ class AppState extends ChangeNotifier {
   }
 
   void _registerNodeTypes() {
-    controller.registerNodeType(NodeTypeMetadata(
-      typeName: 'ImageNode',
-      displayName: 'Image',
-      description: 'Load an image file',
-      icon: Icons.image,
-      factory: (json) => ImageNode.fromJson(json),
-    ));
-    controller.registerNodeType(NodeTypeMetadata(
-      typeName: 'PackerNode',
-      displayName: 'Packer',
-      description: 'Pack AO/Roughness/Metallic into RGBA',
-      icon: Icons.layers,
-      factory: (json) => PackerNode.fromJson(json),
-    ));
-    controller.registerNodeType(NodeTypeMetadata(
-      typeName: 'NormalMapNode',
-      displayName: 'Normal Map',
-      description: 'Height -> normal map (Sobel)',
-      icon: Icons.terrain,
-      factory: (json) => NormalMapNode.fromJson(json),
-    ));
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'ImageNode',
+        displayName: 'Image',
+        description: 'Load an image file',
+        icon: Icons.image,
+        factory: (json) => ImageNode.fromJson(json),
+      ),
+    );
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'PackerNode',
+        displayName: 'Packer',
+        description: 'Pack AO/Roughness/Metallic into RGBA',
+        icon: Icons.layers,
+        factory: (json) => PackerNode.fromJson(json),
+      ),
+    );
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'NormalMapNode',
+        displayName: 'Normal Map',
+        description: 'Height -> normal map (Sobel)',
+        icon: Icons.terrain,
+        factory: (json) => NormalMapNode.fromJson(json),
+      ),
+    );
   }
 }
 
 /// Exposes [AppState] to the widget tree.
 class Inherited extends InheritedNotifier<AppState> {
-  const Inherited({required super.child, super.key, required AppState super.notifier});
+  const Inherited({
+    required super.child,
+    super.key,
+    required AppState super.notifier,
+  });
 
   static AppState of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<Inherited>()!.notifier!;

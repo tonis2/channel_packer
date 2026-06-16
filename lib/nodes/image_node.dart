@@ -51,12 +51,16 @@ class ImageNode extends Node {
   img.Image? _decoded;
 
   /// Decode on demand (and cache). Returns null if no image / undecodable.
-  img.Image? get image => _decoded ??= (bytes == null ? null : img.decodeImage(bytes!));
+  img.Image? get image =>
+      _decoded ??= (bytes == null ? null : img.decodeImage(bytes!));
 
   Future<void> pickImage(BuildContext context) async {
     // Capture the controller before awaiting — context may be unsafe after.
     final controller = NodeControls.of(context);
-    final result = await FilePicker.pickFiles(type: FileType.image, withData: true);
+    final result = await FilePicker.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
     if (result == null) return;
     final picked = result.files.first.bytes;
     if (picked == null) return;
@@ -88,10 +92,19 @@ class ImageNode extends Node {
         child: Stack(
           children: [
             if (bytes == null)
-              Center(child: Text('Click to pick image', style: theme.textTheme.bodySmall))
+              Center(
+                child: Text(
+                  'Click to pick image',
+                  style: theme.textTheme.bodySmall,
+                ),
+              )
             else ...[
               Positioned.fill(
-                child: Image.memory(bytes!, fit: BoxFit.contain, gaplessPlayback: true),
+                child: Image.memory(
+                  bytes!,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                ),
               ),
               Positioned(
                 right: 4,
@@ -102,7 +115,11 @@ class ImageNode extends Node {
                     _decoded = null;
                     controller?.requestUpdate();
                   },
-                  child: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                  child: const Icon(
+                    Icons.delete,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
                 ),
               ),
             ],
