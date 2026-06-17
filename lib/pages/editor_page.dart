@@ -1,4 +1,5 @@
 import 'package:easy_nodes/index.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -134,8 +135,9 @@ class _EditorPageState extends State<EditorPage> {
   }
 }
 
-/// App settings dropdown. Currently just the "embed images" toggle, persisted
-/// to localStorage so it survives reloads.
+/// App settings dropdown: the "embed images" toggle plus the Depth node's model
+/// path (user-downloaded weights) and an optional binary override. All persisted
+/// to localStorage / the config file so they survive reloads.
 class _SettingsMenu extends StatefulWidget {
   const _SettingsMenu();
 
@@ -144,6 +146,32 @@ class _SettingsMenu extends StatefulWidget {
 }
 
 class _SettingsMenuState extends State<_SettingsMenu> {
+  /// Elide a long path to its last two segments for the menu readout.
+  String _short(String? path) {
+    if (path == null || path.isEmpty) return 'not set';
+    final parts = path.split(RegExp(r'[\\/]'));
+    return parts.length <= 2 ? path : '…/${parts.sublist(parts.length - 2).join('/')}';
+  }
+
+  Future<void> _pickModel() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['safetensors'],
+    );
+    final path = result?.files.first.path;
+    if (path == null) return;
+    setState(() => PackerSettings.depthModelPath = path);
+    storeDepthModelPath(path);
+  }
+
+  Future<void> _pickBinary() async {
+    final result = await FilePicker.pickFiles();
+    final path = result?.files.first.path;
+    if (path == null) return;
+    setState(() => PackerSettings.depthBinaryPath = path);
+    storeDepthBinaryPath(path);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
@@ -155,13 +183,47 @@ class _SettingsMenuState extends State<_SettingsMenu> {
           checked: PackerSettings.embedImages,
           child: const Text('Embed images in saved config'),
         ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'model',
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            leading: const Icon(Icons.memory),
+            title: const Text('Set depth model…'),
+            subtitle: Text(
+              _short(PackerSettings.depthModelPath),
+              style: const TextStyle(fontSize: 11),
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'binary',
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            leading: const Icon(Icons.terminal),
+            title: const Text('Set depth binary (optional)…'),
+            subtitle: Text(
+              PackerSettings.depthBinaryPath == null
+                  ? 'bundled'
+                  : _short(PackerSettings.depthBinaryPath),
+              style: const TextStyle(fontSize: 11),
+            ),
+          ),
+        ),
       ],
       onSelected: (value) {
-        if (value == 'embed') {
-          setState(
-            () => PackerSettings.embedImages = !PackerSettings.embedImages,
-          );
-          storeEmbedImages(PackerSettings.embedImages);
+        switch (value) {
+          case 'embed':
+            setState(
+              () => PackerSettings.embedImages = !PackerSettings.embedImages,
+            );
+            storeEmbedImages(PackerSettings.embedImages);
+          case 'model':
+            _pickModel();
+          case 'binary':
+            _pickBinary();
         }
       },
     );

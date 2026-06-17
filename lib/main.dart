@@ -6,8 +6,10 @@ import 'pages/editor_page.dart';
 import 'state.dart';
 
 void main() {
-  // Restore the persisted "embed images" preference before any save can run.
+  // Restore persisted preferences before any save/run can read them.
   PackerSettings.embedImages = loadEmbedImages();
+  PackerSettings.depthModelPath = loadDepthModelPath();
+  PackerSettings.depthBinaryPath = loadDepthBinaryPath();
   runApp(Inherited(notifier: AppState(), child: const ChannelPackerApp()));
 }
 

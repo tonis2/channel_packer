@@ -2,6 +2,7 @@ import 'package:easy_nodes/index.dart';
 import 'package:flutter/material.dart';
 
 import 'nodes/ao_node.dart';
+import 'nodes/depth_node.dart';
 import 'nodes/image_node.dart';
 import 'nodes/normal_map_node.dart';
 import 'nodes/packer_node.dart';
@@ -33,6 +34,15 @@ class AppState extends ChangeNotifier {
         description: 'Pack AO/Roughness/Metallic into RGBA',
         icon: Icons.layers,
         factory: (json) => PackerNode.fromJson(json),
+      ),
+    );
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'DepthNode',
+        displayName: 'Depth',
+        description: 'Albedo -> height/depth (Depth Anything V2)',
+        icon: Icons.height,
+        factory: (json) => DepthNode.fromJson(json),
       ),
     );
     controller.registerNodeType(

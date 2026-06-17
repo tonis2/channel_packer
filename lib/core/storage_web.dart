@@ -4,6 +4,8 @@ import 'package:web/web.dart' as web;
 
 const _graphKey = 'channel_packer.graph';
 const _embedKey = 'channel_packer.embedImages';
+const _depthModelKey = 'channel_packer.depthModelPath';
+const _depthBinaryKey = 'channel_packer.depthBinaryPath';
 
 /// The user's last-saved graph JSON, or null if they have none yet.
 String? loadStoredGraph() => web.window.localStorage.getItem(_graphKey);
@@ -18,3 +20,18 @@ bool loadEmbedImages() => web.window.localStorage.getItem(_embedKey) == 'true';
 
 void storeEmbedImages(bool value) =>
     web.window.localStorage.setItem(_embedKey, value ? 'true' : 'false');
+
+/// Depth model/binary paths. Persisted for API parity with native; the Depth
+/// node itself is desktop-only (the web runner throws UnsupportedError).
+String? loadDepthModelPath() => web.window.localStorage.getItem(_depthModelKey);
+
+void storeDepthModelPath(String? value) => value == null
+    ? web.window.localStorage.removeItem(_depthModelKey)
+    : web.window.localStorage.setItem(_depthModelKey, value);
+
+String? loadDepthBinaryPath() =>
+    web.window.localStorage.getItem(_depthBinaryKey);
+
+void storeDepthBinaryPath(String? value) => value == null
+    ? web.window.localStorage.removeItem(_depthBinaryKey)
+    : web.window.localStorage.setItem(_depthBinaryKey, value);

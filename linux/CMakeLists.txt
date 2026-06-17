@@ -106,6 +106,16 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
+# Bundle the Depth Anything depth/height generator (built from the llm-runner
+# project via `c3c build depth`; refresh with tool/update_depth_binary.sh). It
+# lands in lib/ next to the executable; the Depth node resolves it at runtime as
+# `dirname(resolvedExecutable)/lib/depth`. Self-contained except for the system
+# libvulkan.so.1, which the host must provide.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/bundled/depth"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  COMPONENT Runtime)
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
