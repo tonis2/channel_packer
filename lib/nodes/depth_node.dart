@@ -48,10 +48,10 @@ class DepthNode extends Node {
       offset: data.offset,
       uuid: data.uuid,
       mode: _modeFromName(json['mode'] as String?),
-      albedo: (json['albedo'] as num?)?.toDouble() ?? 0.3,
-      flatten: (json['flatten'] as num?)?.toDouble() ?? 0.5,
-      detail: (json['detail'] as num?)?.toDouble() ?? 0.4,
-      detrend: (json['detrend'] as num?)?.toDouble() ?? 0.1,
+      albedo: (json['albedo'] as num?)?.toDouble() ?? 0.1,
+      flatten: (json['flatten'] as num?)?.toDouble() ?? 0.3,
+      detail: (json['detail'] as num?)?.toDouble() ?? 0.08,
+      detrend: (json['detrend'] as num?)?.toDouble() ?? 0.2,
       res: (json['res'] as num?)?.toInt() ?? 1036,
     );
   }
@@ -130,11 +130,11 @@ class DepthNode extends Node {
         'depth_anything_v2_vits_fp32.safetensors (download it first).',
       );
     }
-    final binaryPath = resolveDepthBinary(PackerSettings.depthBinaryPath);
+    final binaryPath = resolveDepthBinary();
     if (binaryPath == null) {
       throw Exception(
-        'depth binary not found. It should ship in the app bundle (lib/depth); '
-        'otherwise set a path via Settings → "Set depth binary".',
+        'depth binary not found. It ships in the app bundle (lib/depth) — '
+        'try reinstalling the app.',
       );
     }
 

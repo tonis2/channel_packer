@@ -11,7 +11,6 @@ import 'dart:io';
 const _graphKey = 'graph';
 const _embedKey = 'embedImages';
 const _depthModelKey = 'depthModelPath';
-const _depthBinaryKey = 'depthBinaryPath';
 
 File _storeFile() {
   final home =
@@ -50,10 +49,4 @@ String? loadDepthModelPath() => _read()[_depthModelKey] as String?;
 
 void storeDepthModelPath(String? value) => _write(
   _read()..[_depthModelKey] = value,
-);
-
-String? loadDepthBinaryPath() => _read()[_depthBinaryKey] as String?;
-
-void storeDepthBinaryPath(String? value) => _write(
-  _read()..[_depthBinaryKey] = value,
 );

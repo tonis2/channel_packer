@@ -1,14 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-/// Resolve the `depth` binary to use. Prefers an explicit [override] (the
-/// optional Settings path) when it exists, otherwise the copy bundled next to
-/// the app in `lib/depth` (CMake installs it there). Returns null if neither is
-/// present.
-String? resolveDepthBinary(String? override) {
-  if (override != null && override.isNotEmpty && File(override).existsSync()) {
-    return override;
-  }
+/// Resolve the bundled `depth` binary: the copy shipped next to the app in
+/// `lib/depth` (CMake installs it there). Returns null if it's not present.
+String? resolveDepthBinary() {
   final exeDir = File(Platform.resolvedExecutable).parent.path;
   final bundled = '$exeDir/lib/depth';
   if (File(bundled).existsSync()) return bundled;

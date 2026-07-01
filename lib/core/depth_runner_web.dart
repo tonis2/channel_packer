@@ -3,7 +3,7 @@ import 'dart:typed_data';
 /// Web has no subprocess support, so the Depth node is desktop-only. These stubs
 /// keep the web build compiling; both report the limitation if ever reached.
 
-String? resolveDepthBinary(String? override) => null;
+String? resolveDepthBinary() => null;
 
 Future<Uint8List> runDepth({
   required String binaryPath,

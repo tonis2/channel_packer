@@ -164,14 +164,6 @@ class _SettingsMenuState extends State<_SettingsMenu> {
     storeDepthModelPath(path);
   }
 
-  Future<void> _pickBinary() async {
-    final result = await FilePicker.pickFiles();
-    final path = result?.files.first.path;
-    if (path == null) return;
-    setState(() => PackerSettings.depthBinaryPath = path);
-    storeDepthBinaryPath(path);
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
@@ -197,21 +189,6 @@ class _SettingsMenuState extends State<_SettingsMenu> {
             ),
           ),
         ),
-        PopupMenuItem<String>(
-          value: 'binary',
-          child: ListTile(
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-            leading: const Icon(Icons.terminal),
-            title: const Text('Set depth binary (optional)…'),
-            subtitle: Text(
-              PackerSettings.depthBinaryPath == null
-                  ? 'bundled'
-                  : _short(PackerSettings.depthBinaryPath),
-              style: const TextStyle(fontSize: 11),
-            ),
-          ),
-        ),
       ],
       onSelected: (value) {
         switch (value) {
@@ -222,8 +199,6 @@ class _SettingsMenuState extends State<_SettingsMenu> {
             storeEmbedImages(PackerSettings.embedImages);
           case 'model':
             _pickModel();
-          case 'binary':
-            _pickBinary();
         }
       },
     );

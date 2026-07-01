@@ -9,7 +9,6 @@ void main() {
   // Restore persisted preferences before any save/run can read them.
   PackerSettings.embedImages = loadEmbedImages();
   PackerSettings.depthModelPath = loadDepthModelPath();
-  PackerSettings.depthBinaryPath = loadDepthBinaryPath();
   runApp(Inherited(notifier: AppState(), child: const ChannelPackerApp()));
 }
 
